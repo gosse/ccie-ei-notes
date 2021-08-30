@@ -9,6 +9,8 @@
 * PIM-SM - Sparse Mode
 * PIM-DM - Dense Mode
 * Sparse-Dense Mode
+* IGMP - Internet Group Management Protocol
+* MLD - Multicast Listener Discovery
 
 ### 1.6.a Layer 2 multicast
 #### 1.6.a i IGMPv2, IGMPv3
@@ -17,9 +19,6 @@
 * IGMPv2 standard for most things, IGMPv3 brings some new features, like Source-Specific Multicast (SSM), immediate join, and immediate leave. IMGPv2 enabled by default on Cisco routers. 
 * Receiver sends Membership Report message to LHR, which then sends a PIM join to other routers up the tree. 
 * LHR can do IGMPv2 to IGMPv3 mappings if the client doesn't support IGMPv3 
-* A single router on a shared segment is elected to be the active querier. 
-  * Router with lowest IP address become the querier 
-  * This is not the same as the IGMP snooping querier.
 
 
 #### 1.6.a ii IGMP Snooping, PIM Snooping
@@ -32,8 +31,8 @@
   * `Switch(config)# [no] ip igmp snooping`
   * IGMP Snooping Querier 
     * IGMP snooping querier is used in a VLAN where PIM and IGMP are not configured because multicast traffic does not need to be routed. 
-      * `int vlan [VLAN ID]`
-      * `ip igmp snooping querier `
+      * `Switch(config)# int vlan [VLAN ID]`
+      * `Switch(config)# ip igmp snooping querier `
 * PIM Snooping 
   * Requires IGMP snooping 
   * Used when a switch is between routers 
@@ -41,12 +40,36 @@
   * `Switch(config)# [no] ip pim snooping `
 
 
-
 #### 1.6.a iii IGMP Querier
 
-
+* A single router on a shared segment is elected to be the active querier. 
+  * Router with lowest IP address become the querier 
+  * This is not the same as the IGMP snooping querier.
 
 #### 1.6.a iv IGMP Filter
+
+
+* Filter IGMP joins by port 
+* IOS-XE
+  * `ip igmp filter #`
+    * `#` is an igmp profile 
+    * IGMP profiles are a bit like route-maps 
+
+      `Switch(config)# ip igmp profile 3`
+      `Switch(config-igmp-profile)# permit`
+      `Switch(config-igmp-profile)# range 229.9.9.0`
+      `Switch(config-igmp-profile)# range 231.0.0.0 232.0.0.0`
+      `Switch(config-igmp-profile)# exit`
+      `Switch(config)# interface GigabitEthernet0/1`
+      `Switch(config-if)# ip igmp filter 1`
+
+* IOS Classic
+  * Do it with snooping
+  * `ip igmp snooping access-group <acl> [vlan <vlan_id>]`
+  * `ip access-list standard no-mcast-for-you`
+  * `deny ip 229.0.0.0 0.0.0.255`
+  * `permit ip any any`
+
 #### 1.6.a v MLD
 ### 1.6.b Reverse path forwarding check
 ### 1.6.c PIM
