@@ -67,12 +67,33 @@
 
 * IOS Classic
   * Do it with snooping
-  * `ip igmp snooping access-group <acl> [vlan <vlan_id>]`
-  * `ip access-list standard no-mcast-for-you`
-  * `deny ip 229.0.0.0 0.0.0.255`
-  * `permit ip any any`
+
+  ```
+  ip igmp snooping access-group <acl> [vlan <vlan_id>]
+  ip access-list standard no-mcast-for-you
+  deny ip 229.0.0.0 0.0.0.255
+  permit ip any any
+  ```
 
 #### 1.6.a v MLD
+
+* Two versions, MLDv1, MLDv2
+  * MLDv2 required for all IPv6 nodes 
+  * Includes source-specific multicast filters, only accepted sources and all sources except specified. 
+* Uses ICMPv6 
+* Message types: 
+  * Query - Router asks for listeners 
+  * Report - Listeners report themselves 
+  * Done - Listeners say they're done 
+
+
+* MLD Snooping 
+  * Disabled by default globally, enabled on all VLANs by default
+    * VLAN config overrides global 
+    * When you enable it globally, it enables it on all VLANs 
+  * Enable, `Device(config)# ipv6 mld snooping` -> then reload (???) 
+  * Per-VLAN config, `Device(config)# ipv6 mld snooping vlan 1`
+
 ### 1.6.b Reverse path forwarding check
 ### 1.6.c PIM
 #### 1.6.c i Sparse Mode
