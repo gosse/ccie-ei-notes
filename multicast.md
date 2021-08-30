@@ -55,13 +55,13 @@
     * `#` is an igmp profile 
     * IGMP profiles are a bit like route-maps 
 
-      Switch(config)# ip igmp profile 3
+      `Switch(config)# ip igmp profile 3
       Switch(config-igmp-profile)# permit
       Switch(config-igmp-profile)# range 229.9.9.0
       Switch(config-igmp-profile)# range 231.0.0.0 232.0.0.0
       Switch(config-igmp-profile)# exit
       Switch(config)# interface GigabitEthernet0/1
-      Switch(config-if)# ip igmp filter 1
+      Switch(config-if)# ip igmp filter 1`
 
 * IOS Classic
   * Do it with snooping
