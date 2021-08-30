@@ -29,10 +29,17 @@
   * IGMP snooping is Layer 2 switches watching IGMP *membership report* messages and keeping track which hosts are subscribed to which feeds for flooding traffic. 
   * If not enabled, BUM (broadcast, unknown unicast, multicast) traffic is flooded on all ports in the VLAN 
   * Enabled by Default 
+  * `Switch(config)# [no] ip igmp snooping`
+  * IGMP Snooping Querier 
+    * IGMP snooping querier is used in a VLAN where PIM and IGMP are not configured because multicast traffic does not need to be routed. 
+      int vlan [VLAN ID]
+      ip igmp snooping querier 
 * PIM Snooping 
   * Requires IGMP snooping 
   * Used when a switch is between routers 
   * Forwards multicast to ports based on snooping PIM messages 
+  * `Switch(config)# [no] ip pim snooping `
+
 
 
 #### 1.6.a iii IGMP Querier
