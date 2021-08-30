@@ -32,8 +32,10 @@
   * `Switch(config)# [no] ip igmp snooping`
   * IGMP Snooping Querier 
     * IGMP snooping querier is used in a VLAN where PIM and IGMP are not configured because multicast traffic does not need to be routed. 
+
       int vlan [VLAN ID]
       ip igmp snooping querier 
+
 * PIM Snooping 
   * Requires IGMP snooping 
   * Used when a switch is between routers 
