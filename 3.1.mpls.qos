@@ -1,0 +1,166 @@
+## 3.1 MPLS
+
+### Acronym Soup
+
+* MPLS - multi-protocol label switching 
+* LDP - label distribution protocol 
+* LSR - label swtich router
+* LSP - label-switched path
+* PE - Provider Edge
+* CE- - Customer Edge
+* P - Provider router (generally BGP-free) 
+* L3VPN - Layer 3 VPN
+* MP-BGP - multi-protocol BGP 
+* RD - route distinguisher 
+* RT - route target
+* RR - route reflector 
+
+### 3.1.a Operations
+#### 3.1.a i Label stack, LSR, LSP
+
+* Penultimate hop popping
+  * Label 3 - implicit null
+* Look at label stack - `show mpls forwarding-table`
+
+#### 3.1.a ii LDP
+
+* TCP-based data exchange, port 646 
+* LDP peers find each other with multicast (224.0.0.2) , then talk via transport address
+  * Make sure your transport address is in your IGP 
+  * Best practice, hard code this 
+  * `R(config)# mpls ldp router-id 1.2.3.4`
+* You can autconfig based on IGP for link-state routing protocols
+  * OSPF 
+
+  ```
+  router ospf 1
+   mpls ldp autoconfig 
+  ```
+
+  * ISIS 
+
+   ```
+    router isis
+     mpls ldp autconfig
+   ```
+
+* Neighbor up 
+  * configure `mpls ip` on interface
+  * `show mpls ldp nei`
+     
+* Traffic is switched via labels
+* You can see this in cef and MPLS forwarding tables 
+* Penultimate hop popping (PHP) 
+  * Penultimate router pops the outer label to the PE so the PE only has to pop the final label
+
+#### 3.1.a iii MPLS ping, MPLS traceroute
+
+### 3.1.b L3VPN
+
+#### 3.1.b i PE-CE routing
+
+* PE-CE routing can be static, RIPv2, EIGRP, OSPF, IS-IS, or BGP 
+  * Static 
+
+  ```
+  router bgp 200
+    address-family ipv4 unicast vrf Cust-Static 
+    redistribute static
+
+  ```
+
+  * RIPv2 
+
+  ```
+  router bgp 200
+    address-family ipv4 unicast vrf Cust-RIP
+    redistribute rip
+  router rip
+   version 2
+   address-family ipv4 unicast vrf Cust-RIP
+    redist bgp 200
+    default-metric 2
+   exit-address-family
+  ```
+
+  * EIGRP 
+    * BGP extended communities can carry EIGRP metrics, so you don't need to have a default when redistributing
+
+  ```
+  router bgp 200
+    address-family ipv4 unicast vrf Cust-EIGRP
+    redistribute eigrp 2
+  router eigrp Cust-EIGRP
+    address-family ipv4 unicast vrf Cust-EIGRP autonomous-system 3
+     topology-base
+      redistribute bgp 200
+     exit-af-topology
+    exit-address-family
+  ```
+
+  * OSPF 
+     * sham-link 
+       * Provider-side tool to use if the CE routers have a backdoor link 
+     * capabilitity vrf-lite 
+       * Down-bit is set when advertising from PE to CE. If CE has OSPF in a VRF, it won't install the routes 
+       * Capability vrf-lite tells the router to ignore and install the routes 
+
+  ```
+  router bgp 200
+    address-family ipv4 unicast vrf Cust-OSPF
+    redistribute ospf 1 match internal external 1 external 2
+  router ospf 1 vrf Cust-OSPF
+    redistribute bgp 200 subnets
+  ```
+
+  * BGP 
+     * Most commonly used 
+     * `allow-as in` - used on CE router to allow BGP routes with its own AS, if all CE are in the same AS 
+     * `as-override` - used on PE router to override neighbor ASN with its own ASN, if all CE are in same AS, this can solve the same problem as allow-as in.
+     * site-of-origin (soo) 
+        * Configured on PE, BGP extended community
+        * Without this and an iBGP peer between two customer routes, you'll get the route recursion problem. They'll learn about each others' loopbacks through eBGP, then establish iBGP, flip there, then go down, flip back, etc. Neighbor flapping. 
+        * Format ASN:# 
+        * On the BGP peer, `neighbor 1.2.3.4 soo 65001:3`
+
+  ```
+  router bgp 200
+    address-family ipv4 unicast vrf Cust-Static 
+    neighbor 1.2.3.4 remote-as 65000
+  ```
+
+
+
+#### 3.1.b ii MP-BGP VPNv4/VPNv6
+
+* VPNV4 - uses rt extended community 
+  * VPNv4 speakers with a route-target matching a vrf will accept the routes, which makes for a nicely scalable solution
+  * Two labels, transport label and VPN label
+    * Transport label
+      * Tells SP core which router the PE traffic is destined to - who is the exit point 
+        * Dervied from LDP, often called the IGP label
+    * VPN label
+        * Tells the PE router which CE the traffic is destined for 
+        * Dervied from vpnv4 advertisements of PEs 
+        * Each route gets its own label 
+* VPNV6 - 6PE/6VPE 
+  * 6PE uses the global IPv6 routing table on the PE routers.
+  * 6VPE uses VRFs on the PE routers (MPLS VPN).
+* Use `address-family vpnv6` and activate required neighbors
+* Setup `address-family ipv6 unicast` in the customer VRFs
+* Configure your CE-PE routing protocol appropriately, including route redistribution
+  * Static 
+  * EIGRP 
+  * OSPF 
+  * BGP 
+* Multipath with `maximum-paths (up to 32)` in BGP config 
+  * Also, you can use unique RDs on each PE to ahve the RR see them as different routes if the customer is multi-homed 
+
+#### 3.1.b iii Extranet (route leaking)
+
+* Import routes to/from VRFs 
+* Use `export map ROUTE-MAP` in `vrf NAME`, `address-family ipv4 unicast`
+* Use `import map ROUTE-MAP` in `vrf NAME`, `address-family ipv4 unicast`
+* Your route-map can do normal match things, then if you want, set route-target with `set extcommunity rt 1.2.3.4:55`
+
+
